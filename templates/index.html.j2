@@ -1,7 +1,7 @@
 <html>
     <body>
         <h1>Hello Docker Apache!!</h1>
-        <h2>My Public IP is {{ ansible_ssh_host }}</h2>
+        <h2>My Public IP is {{ ansible_host }}</h2>
         <h3>Private IP address of VM is {{ ansible_default_ipv4.address }}</h3>
     </body>
 </html>
