@@ -1,0 +1,10 @@
+frontend http-in
+  default_backend container_backend
+  bind *:8080
+
+backend container_backend
+  balance roundrobin
+  {%  for host in backend_hosts %}
+   server {{ hostvars[host].inventory_hostname }} {{ hostvars[host].ansible_default_ipv4.address }}:8080 check
+{% endfor %}
+

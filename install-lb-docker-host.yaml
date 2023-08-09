@@ -1,0 +1,108 @@
+---
+  - name: Create HA Proxy config
+    hosts: all
+    become: true
+    vars:
+      backend_hosts: "{{ groups['dockerhost'] }}"
+    tasks:
+     - name: Create haproxy config directory
+       file:
+         path: /home/ubuntu/loadbalancer
+         state: directory
+       when: "'loadbalancer_docker' in group_names"
+     - name: Create haproxy.cfg
+       template:
+         src: frontend.haproxy.config.j2
+         dest: /home/ubuntu/loadbalancer/haproxy.cfg
+         owner: ubuntu
+         group: ubuntu
+         mode: 0774
+       when: "'loadbalancer_docker' in group_names"
+  - name: Create HA Proxy container
+    hosts: loadbalancer_docker
+    become: true
+    vars:
+      loadbalancer_container_name: loadbalancer
+      loadbalancer_container_image: 'haproxy'
+    tasks:
+     - name: Install aptitude
+       apt:
+         name: aptitude
+         state: latest
+         update_cache: true
+     - name: Install required system packages
+       apt:
+         pkg:
+           - apt-transport-https
+           - ca-certificates
+           - curl
+           - software-properties-common
+           - python3-pip
+           - virtualenv
+           - python3-setuptools
+         state: latest
+         update_cache: true
+     - name: Add Docker GPG apt Key
+       apt_key:
+           url: https://download.docker.com/linux/ubuntu/gpg
+           state: present
+     - name: Add Docker Repository
+       apt_repository:
+          repo: deb https://download.docker.com/linux/ubuntu focal stable
+          state: present
+
+     - name: Update apt and install docker-ce
+       apt:
+         name: docker-ce
+         state: latest
+         update_cache: true
+
+     - name: Install Docker Module for Python
+       pip:
+         name: docker
+     - name: Add Ubuntu user to Docker group
+       user:
+          name: ubuntu
+          groups: docker
+          append: yes
+     - name: Add Docker Repository
+       apt_repository:
+           repo: deb https://download.docker.com/linux/ubuntu focal stable
+           state: present
+
+     - name: Update apt and install docker-ce
+       apt:
+         name: docker-ce
+         state: latest
+         update_cache: true
+
+     - name: Install Docker Module for Python
+       pip:
+         name: docker
+     - name: Add Ubuntu user to Docker group
+       user:
+          name: ubuntu
+          groups: docker
+          append: yes
+     - name: Create haproxy config directory
+       file:
+          path: /home/ubuntu/loadbalancer
+          state: directory
+     - name: Create Haproxy container
+       community.docker.docker_container:
+          name: "{{ loadbalancer_container_name }}"
+          image: "{{ loadbalancer_container_image }}"
+          state: started 
+          volumes:
+              - /home/ubuntu/loadbalancer/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+          network_mode: host
+
+
+
+
+
+
+
+  
+
+
